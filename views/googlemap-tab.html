@@ -1,0 +1,100 @@
+<script>
+ var icon = new google.maps.MarkerImage("http://maps.google.com/mapfiles/ms/micons/blue.png",
+		 new google.maps.Size(32, 32), new google.maps.Point(0, 0),
+		 new google.maps.Point(16, 32));
+		 var center = null;
+		 var map = null;
+		 var currentPopup;
+	 
+var locations;
+var infowindow = new google.maps.InfoWindow(); 
+var  i; 
+
+ function LoadMarkers() {
+	
+	var str = "";
+	
+	$.post("currentlocation/api_loadlocations.php", {queryString: ""+str+""},  
+			 function(data,status){
+				 var loc;
+				if(data.length >0 && status=="success") 
+				{
+					loc = JSON.parse(data);
+					LoadValue(loc);
+					initMap();			
+				}
+				else 
+					alert ("not works");
+			});
+	}
+
+	function LoadValue(val)
+	{
+		locations=val;
+	}
+		 
+	jQuery(function($) {
+    $(document).ready(function() {
+		LoadMarkers();
+	 
+	    });
+		
+		$('#mainTabs').on('click', function (e) {
+		google.maps.event.trigger(map, 'resize');
+	    //map.setZoom( map.getZoom() - 10);
+			});		
+		});
+
+
+function initMap()
+{
+map = new google.maps.Map(document.getElementById("map_canvas"), {  
+     zoom: 10, 
+    center: new google.maps.LatLng(32.7801586, -96.8063248), 
+     mapTypeId: google.maps.MapTypeId.ROADMAP  
+  }); 
+
+  
+	//var largeLatlng = new google.maps.LatLng(32.7801586, -96.8063248);
+
+
+	 if (locations.length>0)
+	 {
+		 for (i = 0; i < locations.length; i++) 
+		 { 
+		
+		   marker = new google.maps.Marker({  
+				 position: new google.maps.LatLng(locations[i].lng, locations[i].lat),  
+				 icon: icon , 
+				 map: map 
+			 });  
+		 
+		  google.maps.event.addListener(marker, 'click', (function (marker, i) {  
+				 return function () { 
+					 infowindow.setContent(locations[i].desc);  
+					 infowindow.open(map, marker);  
+				 }  
+			 })(marker, i));  
+		
+		
+			}
+		}
+
+ }
+
+  
+    </script>
+
+<div role="tabpanel" class="tab-pane " id="googlemap">
+    <div class="googlemap">
+        <div class="loader" ng-show="loading"><div class="imgWrapper"><img src="images/loader.gif" alt="loading..."></div></div>
+       <div class="row controls">
+            <div class="col-md-12">
+					<div id="map_canvas" style="width: 850px; height: 450px; border: 0px; padding: 0px;"></div>
+            </div>
+
+        </div>    
+	</div>
+</div>
+
+

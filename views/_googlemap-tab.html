@@ -1,0 +1,126 @@
+<script>
+ var icon = new google.maps.MarkerImage("http://maps.google.com/mapfiles/ms/micons/blue.png",
+		 new google.maps.Size(32, 32), new google.maps.Point(0, 0),
+		 new google.maps.Point(16, 32));
+		 var center = null;
+		 var map = null;
+		 var currentPopup;
+		 
+		 
+		 var bounds = new google.maps.LatLngBounds();
+	
+	 function addMarker(lat, lng, info,icoImage) {
+		 var pt = new google.maps.LatLng(lat, lng);
+		 //bounds.extend(pt);
+		bounds  = new google.maps.LatLngBounds();
+		 var marker = new google.maps.Marker({
+		 position: pt,
+		 icon: icoImage,
+		 map: map
+		 });
+
+		loc = new google.maps.LatLng(marker.position.lat(), marker.position.lng());
+		bounds.extend(loc);
+
+		 var popup = new google.maps.InfoWindow({
+		 content: info,
+		 maxWidth: 300
+		 });
+
+
+		 google.maps.event.addListener(marker, "click", function() {
+		 if (currentPopup != null) {
+		 currentPopup.close();
+		 currentPopup = null;
+		 }
+		 popup.open(map, marker);
+		 currentPopup = popup;
+		 });
+		 google.maps.event.addListener(popup, "closeclick", function() {
+		 map.panTo(center);
+		 currentPopup = null;
+		 });
+		 }
+		 
+ 
+		 
+	jQuery(function($) {
+    $(document).ready(function() {
+		initMap();		 
+	    });
+		
+		$('#mainTabs').on('click', function (e) {
+		google.maps.event.trigger(map, 'resize');
+	    //map.setZoom( map.getZoom() - 10);
+			});		
+		});
+
+
+		 function initMap()
+		 {
+		 map = new google.maps.Map(document.getElementById("map_canvas"), {
+		 center: new google.maps.LatLng(0, 0),
+		 zoom:10,
+		 mapTypeId: google.maps.MapTypeId.ROADMAP,
+		 mapTypeControl: false,
+		 mapTypeControlOptions: {
+		 style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR
+		 },
+		 navigationControl: true,
+		 navigationControlOptions: {
+		 style: google.maps.NavigationControlStyle.SMALL
+		 }
+		 });
+		 
+		 <?php
+		 
+		/*
+		$id = $_GET["id"];
+		 $col = mileagesdetails::GetAll($id);
+		foreach($col as $k=>$v)
+				{ 
+		 $lat=$k->getStartFromLat();
+		 $lon=$k->getStartFromLong();
+		 $desc=$k->getDescription();
+		 echo ("addMarker($lat, $lon,'<br/>$desc',icon);\n");
+		
+		 $lat=$k->getReachedAtLat();
+		 $lon=$k->getReachedAtLong();
+		 $desc=$k->getDescription();
+		 echo ("addMarker($lat, $lon,'<br/>$desc',icon);\n");
+		 
+		 }
+		 */
+		 ?>
+	
+	  addMarker(33.9201008, -84.3784367,'<b>Site Office</b>',icon);
+		 addMarker(32.7801586, -96.8063248,'<b>Head Office</b>',icon);
+
+	//	map.fitBounds(bounds);       # auto-zoom
+	//map.panToBounds(bounds);     # auto-center
+
+		// center = bounds.getCenter();
+		 map.fitBounds(bounds);
+
+		google.maps.event.trigger(map, 'resize'); 
+		$scope.$apply();
+
+
+		 }
+
+  
+    </script>
+
+<div role="tabpanel" class="tab-pane " id="googlemap">
+    <div class="googlemap">
+        <div class="loader" ng-show="loading"><div class="imgWrapper"><img src="images/loader.gif" alt="loading..."></div></div>
+       <div class="row controls">
+            <div class="col-md-12">
+					<div id="map_canvas" style="width: 850px; height: 450px; border: 0px; padding: 0px;"></div>
+            </div>
+
+        </div>    
+	</div>
+</div>
+
+

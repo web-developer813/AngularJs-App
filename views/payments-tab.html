@@ -1,0 +1,138 @@
+<div role="tabpanel" class="tab-pane " id="payments" ng-controller="PaymentTabController">
+    <div class="row controls"></div>
+
+    <div class="row">
+        <div class="col-md-6" ng-controller="PendingAwardController" class="tableAndControlsWrapper">
+            <div class="loader" ng-show="loading"><div class="imgWrapper"><img src="images/loader.gif" alt="loading..."></div></div>
+            <header>
+                <h2>Pending awards</h2>
+                <form class="form-inline">
+                    <div class="form-group">
+                        <input type="text" class="form-control" ng-model="searchQuery" ng-model-options="{ debounce: 500 }" ng-change="getAccounts()" placeholder="Search query">
+                    </div>
+                </form>
+                <button data-toggle="modal" data-target="#payAppointments" class="btn btn-primary" ng-show="appointmentsToPay.length" ng-cloak="">Pay</button>
+            </header>
+
+            <div class="tableAndPagination">
+                <div class="table-wrapper" ng-hide="loading">
+                    <div class="table-responsive" ng-cloak>
+                        <table id="pending-award-table" class="table table-striped table-hover text-nowrap ">
+                            <thead>
+                            <tr>
+                                <th><input class="cbToggle" type="checkbox"></th>
+                                <th class="noselect"><a ng-click="setOrderBy('a.id')">ID</a><span>{{showOrderArrow('a.id')}}</span></th>
+                                <th class="noselect"><a ng-click="setOrderBy('a.appointmentDate')">App. date</a><span>{{showOrderArrow('a.appointmentDate')}}</span></th>
+                                <th>App. time<span>{{showOrderArrow('a.appointmentDate')}}</span></th>
+                                <th class="noselect"><a ng-click="setOrderBy('a.status')">Status</a><span>{{showOrderArrow('a.status')}}</span></th>
+                                <th class="noselect"><a ng-click="setOrderBy('a.installation')">Installation</a><span>{{showOrderArrow('a.installation')}}</span></th>
+                                <th class="noselect"><a ng-click="setOrderBy('appointmentSetterName')">App. setter</a><span>{{showOrderArrow('appointmentSetterName')}}</span></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr ng-repeat="(index, appointment) in pendingAwards">
+                                <td><input class="appCb" type="checkbox" checklist-model="appointmentsToPay" checklist-value="appointment.id"></td>
+                                <td>{{appointment.id}}</td>
+                                <td>{{appointment.appointmentDate | myDateFormatString:'MMM D YYYY':'MMM D YYYY h:mm A'}}</td>
+                                <td>{{appointment.appointmentDate | myDateFormatString:'h:mm A':'MMM D YYYY h:mm A'}}</td>
+                                <td>{{statuses[appointment.status]}}</td>
+                                <td>{{installations[appointment.installation]}}</td>
+                                <td>
+                                    {{appointment.appointmentSetterName}}
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <nav ng-show="pagesTotal > 1" ng-cloak>
+                    <ul class="pagination">
+                        <li ng-class="getCSSClass($index)" ng-click="setPage($index + 1)" ng-repeat="i in getNumber(pagesTotal) track by $index">
+                            <a href="">{{$index + 1}}</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+
+            <!--Payment modal-->
+            <div class="modal fade" id="payAppointments" tabindex="-1" role="dialog" aria-labelledby="payAppointments">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content text-center">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title">Pay appointments</h4>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to pay selected appointments?</p>
+                            <button ng-click="payAppointments()" data-dismiss="modal" type="button" class="btn">Yes</button>
+                            <button data-dismiss="modal" type="button" class="btn">No</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6" ng-controller="PaidAccountsController" class="tableAndControlsWrapper">
+            <div class="loader" ng-show="loading"><div class="imgWrapper"><img src="images/loader.gif" alt="loading..."></div></div>
+            <header>
+                <h2>Paid accounts</h2>
+                <form class="form-inline">
+                    <div class="form-group">
+                        <input type="text" class="form-control" ng-model="searchQuery" ng-model-options="{ debounce: 500 }" ng-change="getAccounts()" placeholder="Search query">
+                    </div>
+                </form>
+                <form action="invoice.php" method="post" target="_blank">
+                    <input type="hidden" name="invoiceIDs" value="{{idsForPOST(appointmentsToGetInvoice)}}">
+                    <input class="btn btn-primary" type="submit" value="Get invoice"
+                           ng-click="markInvoiceDownloaded()" ng-show="appointmentsToGetInvoice.length" ng-cloak="" >
+                </form>
+<!--                <a href="#" class="btn btn-primary"  >Get invoice</a>-->
+            </header>
+
+
+            <div class="tableAndPagination">
+                <div class="table-wrapper" ng-hide="loading">
+                    <div class="table-responsive" ng-cloak>
+                        <table id="paid-accounts-table" class="table table-striped table-hover text-nowrap " >
+                            <thead>
+                            <tr>
+                                <th><input class="cbToggle" type="checkbox"></th>
+                                <th class="noselect"><a ng-click="setOrderBy('a.id')">ID</a><span>{{showOrderArrow('a.id')}}</span></th>
+                                <th class="noselect"><a ng-click="setOrderBy('a.appointmentDate')">App. date</a><span>{{showOrderArrow('a.appointmentDate')}}</span></th>
+                                <th>App. time<span>{{showOrderArrow('a.appointmentDate')}}</span></th>
+                                <th class="noselect"><a ng-click="setOrderBy('a.status')">Status</a><span>{{showOrderArrow('a.status')}}</span></th>
+                                <th class="noselect"><a ng-click="setOrderBy('a.installation')">Installation</a><span>{{showOrderArrow('a.installation')}}</span></th>
+                                <th class="noselect"><a ng-click="setOrderBy('appointmentSetterName')">App. setter</a><span>{{showOrderArrow('appointmentSetterName')}}</span></th>
+
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr ng-repeat="(index, appointment) in paidAccounts" ng-class="appointment.invoiceSeen == 1 ? 'success' : ''">
+                                <td><input class="appCb" type="checkbox" data-app-setter-id="{{appointment.appointmentSetter}}" checklist-model="appointmentsToGetInvoice" checklist-value="appointment.id"></td>
+                                <td>{{appointment.id}}</td>
+                                <td>{{appointment.appointmentDate | myDateFormatString:'MMM D YYYY':'MMM D YYYY h:mm A'}}</td>
+                                <td>{{appointment.appointmentDate | myDateFormatString:'h:mm A':'MMM D YYYY h:mm A'}}</td>
+                                <td>{{statuses[appointment.status]}}</td>
+                                <td>{{installations[appointment.installation]}}</td>
+                                <td>{{appointment.appointmentSetterName}}</td>
+
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <nav ng-show="pagesTotal > 1" ng-cloak>
+                    <ul class="pagination">
+                        <li ng-class="getCSSClass($index)" ng-click="setPage($index + 1)" ng-repeat="i in getNumber(pagesTotal) track by $index">
+                            <a href="">{{$index + 1}}</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+</div>

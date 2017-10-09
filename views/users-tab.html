@@ -1,0 +1,204 @@
+<div role="tabpanel" class="tab-pane " id="users" ng-controller="UserController">
+    <div class="tableAndControlsWrapper">
+        <div class="loader" ng-show="loading"><div class="imgWrapper"><img src="images/loader.gif" alt="loading..."></div></div>
+        <div class="row controls">
+            <div class="col-md-12">
+                <?php if (actionIsAllowedForTarget('add', 'user')): ?>
+                <button ng-click="prepareAddUser()" class="btn btn-primary pull-left" type="button" data-toggle="modal" data-target="#addEditUser"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span> New user</button>
+                <?php endif; ?>
+            </div>
+        </div>
+
+
+        <div class="table-wrapper">
+            <div class="table-responsive">
+                <table id="users-table" class="table table-striped table-hover">
+                    <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Name</th>
+                        <th>Last name</th>
+                        <th>Address</th>
+                        <th>City</th>
+                        <th>Zip</th>
+                        <th>Phone number</th>
+
+                        <th>
+                            <?php if (userIsAdmin() || userIsSuperadmin()): ?>
+                            Fee
+                            <?php endif; ?>
+                        </th>
+                    </thead>
+                    <tbody>
+                    <tr ng-repeat="user in users">
+                        <td>{{user.email}}</td>
+                        <td>{{userRoles[user.role]}}</td>
+                        <td>{{user.name}}</td>
+                        <td>{{user.lastName}}</td>
+                        <td>{{user.address}}</td>
+                        <td>{{user.city}}</td>
+                        <td>{{user.zip}}</td>
+                        <td>{{user.phoneNumber}}</td>
+                        <td>
+                            <?php if (userIsAdmin() || userIsSuperadmin()): ?>
+                            <span ng-show="user.fee1">
+                                I: {{user.fee1 | currency}}<br>
+                                D: {{user.fee2 | currency}}
+                            </span>
+
+                            <?php endif; ?>
+                            <div class="hover-buttons">
+                                <?php if (actionIsAllowedForTarget('edit', 'user')): ?>
+                                <a href="#" aria-label="Edit" data-toggle="modal" data-target="#addEditUser"><span class="glyphicon glyphicon-pencil" aria-hidden="true" ng-click="prepareEditUser($index)"></span></a>
+                                <?php
+                                    endif;
+                                    if (actionIsAllowedForTarget('delete', 'user')):
+                                ?>
+                                <a href="#" aria-label="Remove" data-toggle="modal" data-target="#deleteUser"><span class="glyphicon glyphicon-remove" aria-hidden="true" ng-click="prepareDeleteUser(user.id)"></span></a>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <?php if (actionIsAllowedForTarget('add', 'user') || actionIsAllowedForTarget('edit', 'user')): ?>
+    <!-- Add edit user Modal -->
+    <div class="modal fade" id="addEditUser" tabindex="-1" role="dialog" aria-labelledby="addEditUser">
+        <div class="modal-dialog modal-sm" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">{{modalTitle}}</h4>
+                </div>
+                <div class="modal-body">
+
+                    <form name="addEditUser" novalidate>
+                        <div class="form-group" ng-class="formGroupClass('uEmail')">
+                            <label for="uemail" class="control-label">Email</label>
+                            <input required ng-disabled="editMode" maxlength="100" type="email" class="form-control" ng-model="tempUser.email" id="uemail" name="uEmail" placeholder="Email">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-inline" ng-show="editMode">
+                                <input type="checkbox" value="1" ng-model="tempUser.changePass"> New password?
+                            </label>
+                        </div>
+
+                        <div class="form-group" ng-class="formGroupClass('uPass1')" ng-show="!editMode || tempUser.changePass">
+                            <label for="upass1" class="control-label">Password</label>
+                            <input ng-required="!editMode || tempUser.changePass" minlength="8" maxlength="64" type="password" class="form-control" ng-model="tempUser.pass1" name="uPass1" id="upass1" placeholder="Password">
+                            <p class="text-danger" ng-show="formFieldErrorShow('uPass1')">Password must be of size at least 8</p>
+                        </div>
+                        <div class="form-group" ng-class="formGroupClass('uRole')">
+                            <label for="urole" class="control-label">Role</label>
+                            <select required ng-disabled="editMode" class="form-control" ng-model="tempUser.role" name="uRole" id="urole" ng-change="getFollowUsers()">
+                                <option ng-repeat="userRole in userRoles" value="{{$index}}">{{userRole}}</option>
+                            </select>
+                        </div>
+
+                        <div ng-show="tempUser.role == 1">
+                            <div class="form-group">
+                                <label class="checkbox-inline">
+                                    <input ng-disabled="editMode" type="checkbox" value="1" ng-model="tempUser.hasFee"> Has fee
+                                </label>
+                            </div>
+
+                            <div class="form-group" ng-class="formGroupClass('uFee1')" ng-show="tempUser.hasFee">
+                                <label for="ufee1" class="control-label">Fee for installed</label>
+
+                                <div class="input-group">
+                                    <div class="input-group-addon">$</div>
+                                    <input ng-required="tempUser.role == 1 && tempUser.hasFee" type="number" min="1" max="65535" class="form-control" ng-model="tempUser.fee1" id="ufee1" name="uFee1" placeholder="Fee">
+                                    <div class="input-group-addon">.00</div>
+                                </div>
+                            </div>
+
+                            <div class="form-group" ng-class="formGroupClass('uFee2')" ng-show="tempUser.hasFee">
+                                <label for="ufee2" class="control-label">Fee for demos</label>
+
+                                <div class="input-group">
+                                    <div class="input-group-addon">$</div>
+                                    <input ng-required="tempUser.role == 1 && tempUser.hasFee" type="number" min="0" max="65535" class="form-control" ng-model="tempUser.fee2" id="ufee2" name="uFee2" placeholder="Fee">
+                                    <div class="input-group-addon">.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div ng-show="tempUser.role == 0 || tempUser.role == 4 || tempUser.role == 5 ">
+                            <div class="form-group">
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" value="1" ng-model="tempUser.level" ng-click="getFollowUsers()"> Level
+                                </label>
+                            </div>
+                        </div>
+                        <div ng-show="tempUser.level == 1">
+                            <div class="form-group">
+                                <label for="uParent" class="control-label">Tied User</label>
+                                <select  class="form-control" ng-model="tempUser.parent" name="uParent" id="uparent">
+                                    <option ng-repeat="userIndex in userLists" value="{{userIndex.id}}" ng-selected ="userIndex.id == tempUser.parent">{{userIndex.fullName}} ( {{userRoles[userIndex.role]}} )</option>
+                                </select>
+                            </div>
+                        </div>
+
+
+
+                        <div class="form-group" ng-class="formGroupClass('uName')">
+                            <label for="uname" class="control-label">Name</label>
+                            <input required type="text" maxlength="64" class="form-control" ng-model="tempUser.name" id="uname" name="uName" placeholder="Name">
+                        </div>
+                        <div class="form-group" ng-class="formGroupClass('uLastName')">
+                            <label for="ulastname" class="control-label">Last name</label>
+                            <input required type="text" maxlength="64" class="form-control" ng-model="tempUser.lastName" name="uLastName" id="ulastname" placeholder="Last name">
+                        </div>
+                        <div class="form-group" ng-class="formGroupClass('uAddress')">
+                            <label for="uaddress" class="control-label">Address</label>
+                            <input required type="text" maxlength="100" class="form-control" ng-model="tempUser.address" name="uAddress" id="uaddress" placeholder="Address">
+                        </div>
+                        <div class="form-group" ng-class="formGroupClass('uCity')">
+                            <label for="ucity" class="control-label">City</label>
+                            <input required type="text" maxlength="64" class="form-control" ng-model="tempUser.city" name="uCity" id="ucity" placeholder="City">
+                        </div>
+                        <div class="form-group" ng-class="formGroupClass('uZip')">
+                            <label for="uzip" class="control-label">Zip</label>
+                            <input required type="text" maxlength="10" class="form-control" ng-model="tempUser.zip" name="uZip" id="uzip" placeholder="Zip">
+                        </div>
+                        <div class="form-group" ng-class="formGroupClass('uPhoneNumber')">
+                            <label for="uphone-number" class="control-label">Phone number</label>
+                            <input required type="tel" maxlength="30" class="form-control" ng-model="tempUser.phoneNumber" name="uPhoneNumber" id="uphone-number" placeholder="Phone number">
+                        </div>
+
+                        <button ng-click="saveUser()" type="submit" class="btn btn-primary">Save</button>
+                        <br>
+                        <p class="text-danger">{{serverError}}</p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
+        endif;
+        if (actionIsAllowedForTarget('delete', 'user')):
+    ?>
+    <!-- Delete user Modal -->
+    <div class="modal fade" id="deleteUser" tabindex="-1" role="dialog" aria-labelledby="deleteUser">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content text-center">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Delete user</h4>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this user?</p>
+                    <button ng-click="deleteUser()" data-dismiss="modal" type="button" class="btn">Yes</button>
+                    <button data-dismiss="modal" type="button" class="btn">No</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+
+</div>

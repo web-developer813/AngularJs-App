@@ -1,0 +1,367 @@
+<div role="tabpanel" class="tab-pane active" id="dashboard" ng-controller="AppointmentsListController">
+    <!-- Charts -->
+    <div class="charts">
+        <div class="loader" ng-show="chartsLoading"><div class="imgWrapper"><img src="images/loader.gif" alt="loading..."></div></div>
+        <div class="chart-controls">
+            <form class="form-inline">
+                <div class="form-group">
+                    <label for="chartTime">Show </label>
+                    <select class="form-control" ng-model="chartData.time" ng-change="getChartsData()" id="chartTime">
+                        <option value="week">Week data</option>
+                        <option value="month">Month data</option>
+                        <option value="year">Year data</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <?php if (!userIsSalesman()) : ?>
+                    <label for="chartSalesman">For </label>
+                    <select class="form-control" ng-model="chartData.salesman" ng-change="getChartsData()" id="chartSalesman"
+                            ng-options="salesman.id as salesman.name + ' ' + salesman.lastName for salesman in salesmen track by salesman.id">
+                        <option value="">All</option>
+                    </select>
+                    <?php endif; ?>
+                </div>
+            </form>
+        </div>
+        <div class="row charts-row">
+            <div class="col-md-6 text-center">
+                <h3>Sales</h3>
+                <div id="chart-burn-down-dashboard" class="block-center" width="100%" height="200"></div>
+            </div>
+            <div class="global-view col-md-3 col-sm-6 text-center">
+                <h3>Global view</h3>
+                <dl class="dl-horizontal">
+                    <dt>Appointments</dt> <dd><span class="ng-cloak">{{globalviewData.appointments}}</span></dd>
+                    <dt>Demos</dt> <dd><span class="ng-cloak">{{globalviewData.demos}}</span></dd>
+                    <dt>No Demos</dt> <dd><span class="ng-cloak">{{globalviewData.nodemos}}</span></dd>
+                    <dt>Sales</dt> <dd><span class="ng-cloak">{{globalviewData.sales}}</span></dd>
+                    <dt>Installations</dt> <dd><span class="ng-cloak">{{globalviewData.installations}}</span></dd>
+                </dl>
+                <h4 class="appointment-return">Appointment return <span class="ng-cloak">{{getAppointmentReturn()}}</span></h4>
+            </div>
+            <div class="col-md-3 col-sm-6 text-center">
+                <h3>Performance</h3>
+                <div ng-hide="isPossibleToDisplayPerformanceChart()">Cannot display chart</div>
+                <div ng-show="isPossibleToDisplayPerformanceChart()" id="chart-performance-dashboard" class="block-center" width="100%" height="200"></div>
+            </div>
+        </div>
+    </div>
+
+    <?php if (actionIsAllowedForTarget('add', 'appointment') || actionIsAllowedForTarget('edit', 'appointment')): ?>
+    <!-- Add edit appointment Modal -->
+    <div class="modal fade" id="addEditAppointment" tabindex="-1" role="dialog" aria-labelledby="addEditAppointment">
+        <div class="modal-dialog modal-sm" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">{{modalTitle}}</h4>
+                </div>
+                <div class="modal-body">
+
+                    <form name="addEditAppointment" novalidate>
+                        <?php if (!userIsAdmin()): ?>
+                        <?php if (!userIsSalesman()): ?>
+                        <div class="form-group" ng-class="formGroupClass('aName')">
+                            <label class="control-label" for="name">Name</label>
+                            <input required type="text" maxlength="64" class="form-control" ng-model="tempAppointment.name" id="name" name="aName" placeholder="Name">
+                        </div>
+                        <div class="form-group" ng-class="formGroupClass('aLastName')">
+                            <label class="control-label" for="lastname">Last name</label>
+                            <input required type="text" maxlength="64" class="form-control" ng-model="tempAppointment.lastName" id="lastname" name="aLastName" placeholder="Last name">
+                        </div>
+                        <div class="form-group" ng-class="formGroupClass('aAddress')">
+                            <label class="control-label" for="address">Address</label>
+                            <input required type="text" maxlength="100" class="form-control" ng-model="tempAppointment.address" id="address" name="aAddress" placeholder="Address">
+                        </div>
+                        <div class="form-group" ng-class="formGroupClass('aCity')">
+                            <label class="control-label" for="city">City</label>
+                            <input required type="text" maxlength="64" class="form-control" ng-model="tempAppointment.city" id="city" name="aCity" placeholder="City">
+                        </div>
+                        <div class="form-group" ng-class="formGroupClass('aZip')">
+                            <label class="control-label" for="zip">Zip</label>
+                            <input required type="text" maxlength="10" class="form-control" ng-model="tempAppointment.zip" id="zip" name="aZip" placeholder="Zip">
+                        </div>
+                        <div class="form-group" ng-class="formGroupClass('aPhoneNumber')">
+                            <label class="control-label" for="phone-number">Phone number</label>
+                            <input required type="tel" maxlength="30" class="form-control" ng-model="tempAppointment.phoneNumber" id="phone-number" name="aPhoneNumber" placeholder="Phone number">
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-inline">
+                                <input type="checkbox" ng-model="tempAppointment.showPhoneNumber" name="aShowPhoneNumber" value="1"> <strong>Show phone number</strong>
+                            </label>
+                        </div>
+                        <?php endif; ?>
+
+                        <div class="form-group" ng-class="formGroupClass('aDate')" ng-show="!userIsSalesman || tempAppointment.status == 3">
+                            <label class="control-label" for="appointment-date">Appointment date &amp; time</label>
+
+                            <div class="input-group date" id="datetimepicker1">
+                                <input required type="text" datepicker ng-model="tempAppointment.appointmentDate" id="appointment-date" name="aDate" class="form-control">
+                                        <span class="input-group-addon">
+                                            <span class="glyphicon glyphicon-calendar"></span>
+                                        </span>
+                            </div>
+                        </div>
+
+                        <?php if (!userIsSalesman()): ?>
+                        <div class="form-group">
+                            <label class="control-label">Profile</label>
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" checklist-model="tempAppointment.profile" checklist-value="profiles[0]"> New home
+                                </label>
+                            </div>
+                            <div class="checkbox">
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" checklist-model="tempAppointment.profile" checklist-value="profiles[1]"> Kids
+                                </label>
+                            </div>
+                            <div class="checkbox">
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" checklist-model="tempAppointment.profile" checklist-value="profiles[2]"> Bad taste/odor
+                                </label>
+                            </div>
+                        </div>
+
+
+                        <?php if(userIsRegional() || userIsDistrict()  || userIsSales()){ ?>
+                        <div class="form-group" ng-class="formGroupClass('aSalesman')">
+                            <label for="salesman1" class="control-label">Salesman</label>
+                            <select class="form-control" ng-model="tempAppointment.salesman" name="aSalesman" id="salesman1"
+                                    ng-options="salesman.id as  salesman.name + ' ' + salesman.lastName for salesman in salesmenLists">
+                                <option value="">Not set</option>
+                            </select>
+                        </div>
+
+                        <?php } else   { ?>
+                        <div class="form-group" ng-class="formGroupClass('aSalesman')">
+                            <label for="salesman" class="control-label">Salesman</label>
+                            <select class="form-control" ng-model="tempAppointment.salesman" name="aSalesman1" id="salesman"
+                                    ng-options="salesman.id as  salesman.name + ' ' + salesman.lastName for salesman in salesmen">
+                                <option value="">Not set</option>
+                            </select>
+                        </div>
+                        <?php } ?>
+                        <?php endif; ?>
+                        <?php endif; ?>
+
+                        <?php if (userIsAdmin() or userIsSuperadmin()) { ?>
+                        <div class="form-group" ng-class="formGroupClass('aAppointmentSetter')">
+                            <label for="aAppointmentSetter" class="control-label">Appointment setter</label>
+                            <select required class="form-control" ng-model="tempAppointment.appointmentSetter" name="aAppointmentSetter" id="aAppointmentSetter"
+                                    ng-options="appointmentSetter.id as appointmentSetter.fullName for appointmentSetter in appointmentSetters">
+                            </select>
+                        </div>
+                        <?php } ?>
+
+
+                        <?php if (!userIsAdmin()): ?>
+                        <div class="form-group" ng-class="formGroupClass('aStatus')">
+                            <label for="appointment-status" class="control-label">Status</label>
+                            <select required class="form-control" ng-model="tempAppointment.status" name="aStatus" id="appointment-status">
+                                <option ng-repeat="status in statuses" value="{{$index}}">{{status}}</option>
+                            </select>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if (userIsAdmin() or userIsSuperadmin()): ?>
+                        <div class="form-group" ng-class="formGroupClass('aInstallation')">
+                            <label for="appointment-installation" class="control-label">Installation</label>
+                            <select required class="form-control" ng-model="tempAppointment.installation" name="aInstallation" id="appointment-installation">
+                                <option ng-repeat="installation in installations" value="{{$index}}">{{installation}}</option>
+                            </select>
+                        </div>
+                        <?php endif; ?>
+                        <button ng-click="saveAppointment()" type="submit" class="btn btn-primary">Save</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <?php
+            endif;
+            if (actionIsAllowedForTarget('delete', 'appointment')):
+        ?>
+    <!-- Delete appointment Modal -->
+    <div class="modal fade" id="deleteAppointment" tabindex="-1" role="dialog" aria-labelledby="deleteAppointment">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content text-center">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Delete appointment</h4>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this appointment?</p>
+                    <button ng-click="deleteAppointment()" data-dismiss="modal" type="button" class="btn">Yes</button>
+                    <button data-dismiss="modal" type="button" class="btn">No</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <?php endif; ?>
+
+
+    <div class="tableAndControlsWrapper">
+        <div class="loader" ng-show="loading"><div class="imgWrapper"><img src="images/loader.gif" alt="loading..."></div></div>
+        <!-- Controls -->
+        <div class="row controls">
+            <div class="col-md-12">
+
+                <?php if (actionIsAllowedForTarget('add', 'appointment')): ?>
+                <button ng-click="addAppointment()" id="add-new-appointment" class="btn btn-primary pull-left" type="submit" data-toggle="modal" data-target="#addEditAppointment"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span> New appointment</button>
+                <?php endif; ?>
+
+                <form class="form-inline">
+                    <div class="form-group">
+                        <label for="appointmentsFilter">Show </label>
+                        <select class="form-control" ng-model="filter" ng-change="toFirstPageAndGetAppointments()" id="appointmentsFilter"
+                                ng-options="index as statusName for (index, statusName) in statuses">
+                            <option value="">All</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" class="form-control" ng-model="searchQuery" ng-model-options="{ debounce: 500 }" ng-change="toFirstPageAndGetAppointments()" placeholder="Search query">
+                    </div>
+
+                    <button id="printBtn" class="btn">
+                        <span class="glyphicon glyphicon-print" aria-hidden="true"></span><span class="sr-only">Print</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div ng-controller="CommentsController" class="tableAndPagination">
+
+            <div class="table-wrapper">
+                <div class="table-responsive" ng-cloak>
+                    <table id="appointments-table" class="table table-striped table-hover text-nowrap ">
+                        <thead>
+                        <tr>
+                            <th></th>
+                            <th class="noselect"><a ng-click="setOrderBy('a.id')">ID</a><span>{{showOrderArrow('a.id')}}</span></th>
+                            <th class="noselect"><a ng-click="setOrderBy('a.appointmentDate')">App. date</a><span>{{showOrderArrow('a.appointmentDate')}}</span></th>
+                            <th>App. time<span>{{showOrderArrow('a.appointmentDate')}}</span></th>
+							<th class="noselect"><a ng-click="setOrderBy('a.status')">Status</a><span>{{showOrderArrow('a.status')}}</span></th>
+                            <th>Name</th>
+                            <th>Last name</th>
+                            <th>Address</th>
+                            <th class="noselect"><a ng-click="setOrderBy('a.city')">City</a><span>{{showOrderArrow('a.city')}}</span></th>
+                            <th class="noselect"><a ng-click="setOrderBy('a.zip')">Zip</a><span>{{showOrderArrow('a.zip')}}</span></th>
+                            <th>Phone number</th>
+
+                            <th>Profile</th>
+                            <th class="noselect"><a ng-click="setOrderBy('salesmanName')">Salesman</a><span>{{showOrderArrow('salesmanName')}}</span></th>
+                            <th class="noselect"><a ng-click="setOrderBy('a.installation')">Installation</a><span>{{showOrderArrow('a.installation')}}</span></th>
+                            <th class="noselect"><a ng-click="setOrderBy('appointmentSetterName')">App. setter</a><span>{{showOrderArrow('appointmentSetterName')}}</span></th>
+							<th class="noselect"><a ng-click="setOrderBy('a.creationDate')">Creat. date</a><span>{{showOrderArrow('a.creationDate')}}</span></th>
+                            <th>Creat. time<span>{{showOrderArrow('a.creationDate')}}</span></th>
+                            <th>Comments</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr ng-repeat="(index, appointment) in appointments" title="{{appointment.name + ' ' + appointment.lastName}}">
+                            <td>
+                                <span ng-show="appointment.accepted == 1" title="Appointment has been accepted by salesman" class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                                <span ng-show="appointment.accepted == 0" title="Appointment has been declined by salesman. Reason: {{declineReasons[appointment.declineReason]}}." class="declined glyphicon glyphicon-remove" aria-hidden="true"></span>
+                                <span ng-show="appointment.accepted == null" title="Waiting for salesman response" class="glyphicon glyphicon-time" aria-hidden="true"></span>
+                            </td>
+                            <td>{{appointment.id}}</td>
+                            <td>{{appointment.appointmentDate | myDateFormatString:'MMM D YYYY':'MMM D YYYY h:mm A'}}</td>
+                            <td>{{appointment.appointmentDate | myDateFormatString:'h:mm A':'MMM D YYYY h:mm A'}}</td>
+							<td>{{statuses[appointment.status]}}</td>
+                            <td>{{appointment.name}}</td>
+                            <td>{{appointment.lastName}}</td>
+                            <td><a target="_blank" href="https://www.google.com.ua/maps/place/{{appointment.address + ', ' + appointment.city + ', USA' | urlencode}}">{{appointment.address}}</a></td>
+                            <td>{{appointment.city}}</td>
+                            <td>{{appointment.zip}}</td>
+                            <td>
+                                <?php if (userIsSalesman()) : ?>
+                                    <span ng-show="appointment.actualShowPhoneNumber">{{appointment.phoneNumber}}</span>
+                                    <span ng-hide="appointment.actualShowPhoneNumber">Hidden</span>
+                                <?php else : ?>
+                                    <a href="tel:{{appointment.phoneNumber | hrefTel}}">{{appointment.phoneNumber | tel}}</a>
+                                    <span ng-show="appointment.actualShowPhoneNumber">
+                                        <span title="Visible to salesman" class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>
+                                        <span class="sr-only">Visible to salesman</span>
+                                    </span>
+                                <?php endif; ?>
+                            </td>
+                            <td>{{appointment.profile.join(', ')}}</td>
+                            <td>{{appointment.salesmanName ? appointment.salesmanName : "Not set"}}</td>
+                            <td>{{installations[appointment.installation]}}</td>
+                            <td>{{appointment.appointmentSetterName}}</td>
+							<td>{{appointment.creationDate | myDateFormatString:'MMM D YYYY'}}</td>
+                            <td>{{appointment.creationDate | myDateFormatString:'h:mm A'}}</td>
+                            <td>
+                                <a href="#" data-toggle="modal" data-target="#comments" ng-click="prepareAndLoadComments(appointment.id, $index)">{{appointment.commentsNumber}}</a>
+
+                                <div class="hover-buttons">
+                                    <?php if (actionIsAllowedForTarget('edit', 'appointment')): ?>
+                                    <a href="#" aria-label="Edit" data-toggle="modal" data-target="#addEditAppointment"><span class="glyphicon glyphicon-pencil" aria-hidden="true" ng-click="editAppointment(index)"></span></a>
+                                    <?php
+                                        endif;
+                                        if (actionIsAllowedForTarget('delete', 'appointment')):
+                                    ?>
+                                    <a href="#" aria-label="Remove" data-toggle="modal" data-target="#deleteAppointment"><span class="glyphicon glyphicon-remove" aria-hidden="true" ng-click="prepareDeleteAppointment(appointment.id)"></span></a>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <nav ng-show="pagesTotal > 1" ng-cloak>
+                <ul class="pagination">
+                    <li ng-class="getCSSClass($index)"  ng-repeat="i in getNumber(pagesTotal) track by $index">
+                        <a href="" ng-click="setPage($index + 1)">{{$index + 1}}</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Comments Modal -->
+            <div class="modal fade" id="comments" tabindex="-1" role="dialog" aria-labelledby="comments">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title">Comments</h4>
+                        </div>
+                        <div class="modal-body">
+                            <div class="commentsWrapper">
+                                <div class="loader" ng-show="commentsLoading"><div class="imgWrapper"><img src="images/loader.gif" alt="loading..."></div></div>
+                                {{commentedAppointment.name}} {{commentedAppointment.lastName}}<br>
+                                {{commentedAppointment.address}}<br>
+                                {{commentedAppointment.city}}<br><br>
+                                <form name="addComment" novalidate>
+
+                                    <div class="form-group">
+                                        <label for="commentText">New comment text</label>
+                                        <textarea required class="form-control" rows="3" ng-model="tempComment.text" id="commentText"></textarea>
+                                    </div>
+
+                                    <button ng-click="postComment()" type="submit" class="btn btn-primary">Post new comment</button>
+                                </form>
+
+                                <div class="commentsListWrapper">
+                                    <div class="media" ng-repeat="comment in comments">
+                                        <div class="media-body">
+                                            <h4 class="media-heading">{{comment.authorName}} <small>{{comment.date | myDateFormatString:'MMM D YYYY h:mm A'}}</small></h4>
+                                            {{comment.text}}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

@@ -1,0 +1,50 @@
+<div role="tabpanel" class="tab-pane" id="reports">
+
+    <div class="charts">
+        <div class="loader" ng-show="chartsLoading"><div class="imgWrapper"><img src="images/loader.gif" alt="loading..."></div></div>
+        <div class="chart-controls">
+            <form class="form-inline">
+                <div class="form-group">
+                    <label for="chartTime2">Show </label>
+                    <select class="form-control" ng-model="chartData.time" ng-change="getChartsData()" id="chartTime2">
+                        <option value="week">Week sales</option>
+                        <option value="month">Month sales</option>
+                        <option value="year">Year sales</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <?php if (!userIsSalesman()) : ?>
+                    <label for="chartSalesman2">For </label>
+                    <select class="form-control" ng-model="chartData.salesman" ng-change="getChartsData()" id="chartSalesman2"
+                            ng-options="salesman.id as salesman.name + ' ' + salesman.lastName for salesman in salesmen track by salesman.id">
+                        <option value="">All</option>
+                    </select>
+                    <?php endif; ?>
+                </div>
+            </form>
+        </div>
+        <div class="row">
+            <div class="col-md-6 text-center">
+                <h3>Sales</h3>
+                <div id="chart-burn-down-chartstab" class="block-center" width="100%" height="180"></div>
+            </div>
+            <div class="global-view col-md-3 col-sm-6 text-center">
+                <h3>Global view</h3>
+                <dl class="dl-horizontal">
+                    <dt>Appointments</dt> <dd class="ng-cloak">{{globalviewData.appointments}}</dd>
+                    <dt>Demos</dt> <dd class="ng-cloak">{{globalviewData.demos}}</dd>
+                    <dt>No Demos</dt> <dd class="ng-cloak">{{globalviewData.nodemos}}</dd>
+                    <dt>Sales</dt> <dd class="ng-cloak">{{globalviewData.sales}}</dd>
+                    <dt>Installations</dt> <dd class="ng-cloak">{{globalviewData.installations}}</dd>
+                </dl>
+            </div>
+            <div class="col-md-3 col-sm-6 text-center">
+                <h3>Performance</h3>
+                <div ng-hide="isPossibleToDisplayPerformanceChart()">Cannot display chart</div>
+                <div id="chart-performance-chartstab" class="block-center" width="100%" height="180"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
